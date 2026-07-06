@@ -46,12 +46,40 @@ class imxingzhe:
         cipher = PKCS1_v1_5.new(recipient_key)
         return base64.b64encode(cipher.encrypt(password.encode('utf-8'))).decode()
 
-    def _extract_token(self, content):
-        data = content.get('data') or {}
-        token = data.get('access_token') or data.get('token') or data.get('access')
+    def _normalize_token(self, token):
         if not token:
-            token = content.get('access_token') or content.get('token') or content.get('access')
-        return token
+            return None
+        token = str(token).strip()
+        if token.lower().startswith('bearer '):
+            token = token[7:].strip()
+        token = token.split('&')[0].strip()
+        return token or None
+
+    def _extract_token(self, content, response=None):
+        data = content.get('data') or {}
+        token_keys = (
+            'access_token', 'accessToken', 'assess_token', 'assessToken',
+            'token', 'access', 'Authorization', 'authorization'
+        )
+        for source in (data, content):
+            for key in token_keys:
+                token = self._normalize_token(source.get(key))
+                if token:
+                    return token
+
+        cookie_names = (
+            '_XingzheWeb_AssessToken', 'XingzheWeb_AssessToken',
+            '_XingzheWeb_AccessToken', 'XingzheWeb_AccessToken'
+        )
+        for cookie_source in (getattr(response, 'cookies', None), getattr(self.session, 'cookies', None)):
+            if not cookie_source:
+                continue
+            for name in cookie_names:
+                getter = getattr(cookie_source, 'get', None)
+                token = self._normalize_token(getter(name) if getter else None)
+                if token:
+                    return token
+        return None
 
     def _message_from_response(self, content, fallback):
         return str(content.get('message') or content.get('error_message') or content.get('msg') or fallback)
@@ -71,7 +99,7 @@ class imxingzhe:
         content = response.json()
         if response.status_code >= 400 or content.get('code') not in (0, None):
             raise Exception('行者登陆失败：' + self._message_from_response(content, response.text))
-        self.token = self._extract_token(content)
+        self.token = self._extract_token(content, response)
         if not self.token:
             raise Exception('行者登陆失败：未获取到 access_token')
 

@@ -211,6 +211,55 @@ class ImxingzheApiTests(unittest.TestCase):
         self.assertEqual('Morning Ride.fit', fit_file[0])
         self.assertEqual(b'FIT-DATA', fit_file[1])
 
+class FakeCookieTokenXingzheSession:
+    def __init__(self):
+        self.verify = True
+        self.trust_env = True
+        self.proxies = {}
+        self.cookies = {
+            '_XingzheWeb_AssessToken': 'cookie-token&expires=soon',
+        }
+        self.requests = []
+
+    def post(self, url, **kwargs):
+        self.requests.append(('POST', url, kwargs))
+        if url.endswith('/api/v1/user/login/'):
+            return FakeResponse(json_data={
+                'code': 0,
+                'data': {
+                    'user_id': 123,
+                    'nickname': 'rider',
+                },
+            })
+        if url.endswith('/api/v1/fit/upload/'):
+            headers = kwargs.get('headers') or {}
+            if headers.get('Authorization') != 'Bearer cookie-token':
+                raise AssertionError(f"missing cookie bearer token: {headers.get('Authorization')}")
+            return FakeResponse(json_data={
+                'code': 0,
+                'data': {
+                    'workout_id': 89,
+                },
+            })
+        raise AssertionError(f'unexpected POST {url}')
+
+
+class ImxingzheCookieTokenTests(unittest.TestCase):
+    def test_uses_assess_token_cookie_when_login_body_has_no_access_token(self):
+        from imxingzhe import imxingzhe
+
+        session = FakeCookieTokenXingzheSession()
+        with patch('imxingzhe.requests.session', return_value=session), \
+             patch.dict(os.environ, {
+                 'IMXINGZHE_USERNAME': '13800138000',
+                 'IMXINGZHE_PASSWORD': 'plain-password',
+                 'EXPORT_PLATFORM': 'igpsport',
+             }, clear=False):
+            client = imxingzhe()
+            client.login()
+            client.import_fit(b'FIT-DATA', 'Cookie Token Ride')
+
+        self.assertEqual('cookie-token', client.token)
 
 if __name__ == '__main__':
     unittest.main()
