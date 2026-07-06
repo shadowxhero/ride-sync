@@ -17,9 +17,10 @@ on:
         type: choice
         options:
           - imxingzhe
-  schedule:
-    # 01:15 Asia/Hong_Kong / Asia/Shanghai, GitHub cron uses UTC.
-    - cron: '15 17 * * *'
+  # 默认关闭定时运行；取消下面 schedule 块的注释即可每天自动运行。
+  # schedule:
+  #   # 01:15 Asia/Hong_Kong / Asia/Shanghai, GitHub cron uses UTC.
+  #   - cron: '15 17 * * *'
 
 permissions:
   contents: read
