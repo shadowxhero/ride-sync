@@ -261,5 +261,56 @@ class ImxingzheCookieTokenTests(unittest.TestCase):
 
         self.assertEqual('cookie-token', client.token)
 
+class FakeSessionCookieOnlyXingzheSession:
+    def __init__(self):
+        self.verify = True
+        self.trust_env = True
+        self.proxies = {}
+        self.cookies = {
+            'sessionid': 'session-cookie',
+        }
+        self.requests = []
+        self.upload_headers = None
+
+    def post(self, url, **kwargs):
+        self.requests.append(('POST', url, kwargs))
+        if url.endswith('/api/v1/user/login/'):
+            return FakeResponse(json_data={
+                'code': 0,
+                'data': {
+                    'user_id': 123,
+                    'nickname': 'rider',
+                },
+            })
+        if url.endswith('/api/v1/fit/upload/'):
+            self.upload_headers = kwargs.get('headers') or {}
+            if 'Authorization' in self.upload_headers:
+                raise AssertionError('Authorization header should be omitted when token is unavailable')
+            return FakeResponse(json_data={
+                'code': 0,
+                'data': {
+                    'workout_id': 90,
+                },
+            })
+        raise AssertionError(f'unexpected POST {url}')
+
+
+class ImxingzheSessionCookieTests(unittest.TestCase):
+    def test_allows_successful_login_without_access_token_when_session_cookies_exist(self):
+        from imxingzhe import imxingzhe
+
+        session = FakeSessionCookieOnlyXingzheSession()
+        with patch('imxingzhe.requests.session', return_value=session), \
+             patch.dict(os.environ, {
+                 'IMXINGZHE_USERNAME': '13800138000',
+                 'IMXINGZHE_PASSWORD': 'plain-password',
+                 'EXPORT_PLATFORM': 'igpsport',
+             }, clear=False):
+            client = imxingzhe()
+            client.login()
+            client.import_fit(b'FIT-DATA', 'Session Cookie Ride')
+
+        self.assertIsNone(client.token)
+        self.assertEqual(2, len(session.requests))
 if __name__ == '__main__':
     unittest.main()

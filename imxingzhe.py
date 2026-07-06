@@ -22,6 +22,7 @@ class imxingzhe:
         self.session.verify = False
         self.session.trust_env = False
         self.token = None
+        self.logged_in = False
         if os.getenv('DEBUG_MODE') == 'True':
             self.session.trust_env = True
             self.session.proxies = {
@@ -100,8 +101,7 @@ class imxingzhe:
         if response.status_code >= 400 or content.get('code') not in (0, None):
             raise Exception('行者登陆失败：' + self._message_from_response(content, response.text))
         self.token = self._extract_token(content, response)
-        if not self.token:
-            raise Exception('行者登陆失败：未获取到 access_token')
+        self.logged_in = True
 
     def get_activity_list(self):
         pass
@@ -117,7 +117,7 @@ class imxingzhe:
         export_platform = os.getenv('EXPORT_PLATFORM')
         if export_platform not in file_source_list:
             raise Exception('暂不支持导入该平台数据')
-        if not self.token:
+        if not self.logged_in:
             raise Exception('上传轨迹失败：未登录')
 
         fit_filename = title + '.fit'
