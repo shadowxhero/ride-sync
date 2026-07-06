@@ -18,28 +18,38 @@ on:
         type: choice
         options:
           - imxingzhe
+  schedule:
+    # 06:07 Asia/Hong_Kong / Asia/Shanghai, GitHub cron uses UTC.
+    - cron: '7 22 * * *'
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
     - name: Check out repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v7
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: '3.10'
-        cache: 'pip' # caching pip dependencies
+        cache: 'pip'
     - name: Install dependencies
       run: pip install -r requirements.txt
-    - name: Run
+    - name: Run tests
+      run: python -m unittest test_sync.py
+    - name: Run sync
       env:
-        EXPORT_PLATFORM: ${{ inputs.exportPlatform }}
-        IMPORT_PLATFORM: ${{ inputs.importPlatform }}
+        EXPORT_PLATFORM: ${{ github.event.inputs.exportPlatform || 'igpsport' }}
+        IMPORT_PLATFORM: ${{ github.event.inputs.importPlatform || 'imxingzhe' }}
         IGPSPORT_USERNAME: ${{ secrets.IGPSPORT_USERNAME }}
         IGPSPORT_PASSWORD: ${{ secrets.IGPSPORT_PASSWORD }}
         IMXINGZHE_USERNAME: ${{ secrets.IMXINGZHE_USERNAME }}
         IMXINGZHE_PASSWORD: ${{ secrets.IMXINGZHE_PASSWORD }}
         ONELAP_USERNAME: ${{ secrets.ONELAP_USERNAME }}
         ONELAP_PASSWORD: ${{ secrets.ONELAP_PASSWORD }}
+        RUN_FOREVER: 'False'
       run: python3 main.py

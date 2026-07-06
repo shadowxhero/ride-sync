@@ -31,15 +31,37 @@ def set_last_sync_id(export_platform, activity_id):
         file.write(str(activity_id))
 
 
-def main():
-    load_dotenv()
-    export_platform = os.getenv('EXPORT_PLATFORM')
-    import_platform = os.getenv('IMPORT_PLATFORM')
-    platform_list = {
+def build_platform_list():
+    return {
         'igpsport': igpsport(),
         'imxingzhe': imxingzhe(),
         'onelap': onelap(),
     }
+
+
+def sync_activities(export_platform, export_platform_obj, import_platform_obj):
+    last_sync_id = get_last_sync_id(export_platform)
+    activity_list = export_platform_obj.get_activity_list()
+    for activity in activity_list:
+        if activity['ride_id'] > last_sync_id:
+            fit_file = export_platform_obj.export_fit(activity['origin_activity'])
+            import_platform_obj.import_fit(fit_file, activity['title'])
+            last_sync_id = activity['ride_id']
+            set_last_sync_id(export_platform, last_sync_id)
+
+
+def should_run_once():
+    return os.getenv('RUN_FOREVER') != 'True'
+
+
+def main(run_once=None):
+    load_dotenv()
+    if run_once is None:
+        run_once = should_run_once()
+
+    export_platform = os.getenv('EXPORT_PLATFORM')
+    import_platform = os.getenv('IMPORT_PLATFORM')
+    platform_list = build_platform_list()
     if export_platform not in platform_list:
         raise Exception('导出平台配置不正确')
     if import_platform not in platform_list:
@@ -50,15 +72,10 @@ def main():
     export_platform_obj.login()
     import_platform_obj.login()
     # 开始同步
-    last_sync_id = get_last_sync_id(export_platform)
     while True:
-        activity_list = export_platform_obj.get_activity_list()
-        for activity in activity_list:
-            if activity['ride_id'] > last_sync_id:
-                fit_file = export_platform_obj.export_fit(activity['origin_activity'])
-                import_platform_obj.import_fit(fit_file, activity['title'])
-                last_sync_id = activity['ride_id']
-                set_last_sync_id(export_platform, last_sync_id)
+        sync_activities(export_platform, export_platform_obj, import_platform_obj)
+        if run_once:
+            break
         time.sleep(60)
 
 
