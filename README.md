@@ -32,7 +32,7 @@
    * `ONELAP_PASSWORD`: 顽鹿账户密码
 3. 在项目的 Actions 页面，选择 “Run manually” 这个 action，点击运行。
 
-GitHub Action 会先运行单元测试，再执行一轮同步，不会无限循环占用 runner。当前 workflow 也配置了定时任务：每天香港/北京时间 06:07 自动运行一次。
+GitHub Action 会先运行单元测试，再执行一轮同步，不会无限循环占用 runner。当前 workflow 也配置了定时任务：每天香港/北京时间 01:15 自动运行一次。
 
 **TODO**
 

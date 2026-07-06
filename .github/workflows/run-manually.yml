@@ -19,8 +19,8 @@ on:
         options:
           - imxingzhe
   schedule:
-    # 06:07 Asia/Hong_Kong / Asia/Shanghai, GitHub cron uses UTC.
-    - cron: '7 22 * * *'
+    # 01:15 Asia/Hong_Kong / Asia/Shanghai, GitHub cron uses UTC.
+    - cron: '15 17 * * *'
 
 permissions:
   contents: read
