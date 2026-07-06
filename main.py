@@ -8,7 +8,6 @@ import urllib3
 from dotenv import load_dotenv
 from igpsport import igpsport
 from imxingzhe import imxingzhe
-from onelap import onelap
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -35,7 +34,6 @@ def build_platform_list():
     return {
         'igpsport': igpsport(),
         'imxingzhe': imxingzhe(),
-        'onelap': onelap(),
     }
 
 

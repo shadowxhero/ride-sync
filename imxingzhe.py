@@ -112,7 +112,6 @@ class imxingzhe:
     def import_fit(self, fit_file, title):
         file_source_list = {
             'igpsport': 'iGPSPORT',
-            'onelap': 'Onelap',
         }
         export_platform = os.getenv('EXPORT_PLATFORM')
         if export_platform not in file_source_list:

@@ -10,7 +10,6 @@ on:
         type: choice
         options:
           - igpsport
-          - onelap
       importPlatform:
         description: 'Activities to be imported into:'
         required: true
@@ -49,7 +48,5 @@ jobs:
         IGPSPORT_PASSWORD: ${{ secrets.IGPSPORT_PASSWORD }}
         IMXINGZHE_USERNAME: ${{ secrets.IMXINGZHE_USERNAME }}
         IMXINGZHE_PASSWORD: ${{ secrets.IMXINGZHE_PASSWORD }}
-        ONELAP_USERNAME: ${{ secrets.ONELAP_USERNAME }}
-        ONELAP_PASSWORD: ${{ secrets.ONELAP_PASSWORD }}
         RUN_FOREVER: 'False'
       run: python3 main.py

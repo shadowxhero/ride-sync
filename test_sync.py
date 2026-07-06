@@ -141,6 +141,11 @@ class MainLoopTests(unittest.TestCase):
         self.assertEqual([(b'FIT', 'ride')], import_platform.imports)
         set_last_sync_id.assert_called_once_with('igpsport', 10)
 
+    def test_platform_list_only_includes_igpsport_and_xingzhe(self):
+        import main
+
+        self.assertEqual({'igpsport', 'imxingzhe'}, set(main.build_platform_list()))
+
 
 class FakeXingzheSession:
     def __init__(self):
@@ -210,6 +215,21 @@ class ImxingzheApiTests(unittest.TestCase):
         fit_file = session.upload_files['fit_file']
         self.assertEqual('Morning Ride.fit', fit_file[0])
         self.assertEqual(b'FIT-DATA', fit_file[1])
+
+    def test_rejects_removed_upload_source(self):
+        from imxingzhe import imxingzhe
+
+        class NoUploadSession:
+            def post(self, url, **kwargs):
+                raise AssertionError('upload should not be attempted for removed source')
+
+        with patch.dict(os.environ, {'EXPORT_PLATFORM': 'legacy'}, clear=False):
+            client = imxingzhe()
+            client.logged_in = True
+            client.session = NoUploadSession()
+
+            with self.assertRaisesRegex(Exception, '暂不支持导入该平台数据'):
+                client.import_fit(b'FIT-DATA', 'Removed Source Ride')
 
 class FakeCookieTokenXingzheSession:
     def __init__(self):
